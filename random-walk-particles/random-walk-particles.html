@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- ^tell browser to use HTML5 standard -->
+
+<!-- declare namespaces -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+
+<!-- metadata of the webpage -->
+<head>
+
+    <title>Random walk particles</title>
+    <!-- the following meta line optimizes the site for mobile devices. It sets the viewport size
+    to the screen size, so it will be displayed maximized, but unscaled. -->
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+    <meta charset="UTF-8" http-equiv="content-type" content="text/html">
+    <!-- a little bit of CSS to set the background to black and hide oversized content so we don't
+    get scroll bars -->
+    <style type="text/css">
+        body {background-color: #000000; overflow: hidden}
+    </style>
+
+</head>
+
+<!-- content of the webpage -->
+<body>
+
+    <!-- include Three.js library from google api -->
+    <script src="https://ajax.googleapis.com/ajax/libs/threejs/r76/three.min.js"></script>
+    <!-- include dat.gui from google -->
+    <script src="../lib/dat.gui.min.js"></script>
+    <!-- scene object -->
+    <script src="../core/scene.js"></script>
+    <!-- camera controls -->
+    <script src="../core/orbit-controls.js"></script>
+    <!-- display stats -->
+    <script src="../core/stats.js"></script>
+    <!-- main script; renders a particle system that follows torus knot gravity -->
+    <script src="random-walk-particles.js"></script>
+
+</body>
+</html>

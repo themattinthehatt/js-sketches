@@ -34,7 +34,7 @@ THREE.OrbitControls = function(camera) {
 
     this.userZoomSpeed = 1.0;
     this.userRotateSpeed = 0.01;
-    this.userPanSpeed = 0.1;
+    this.userPanSpeed = 1.0;
 
     // start near origin facing along y-axis
     this.position0 = new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z);
