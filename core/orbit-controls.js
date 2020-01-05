@@ -11,9 +11,10 @@
 
 // dict of key states to hold persistent key press info
 keyStates = {};
+
 // only pay attention to standard ASCII keys
-for (var i = 32; i < 128; i++) {
-    var c = String.fromCharCode(i);
+for (let i = 32; i < 128; i++) {
+    let c = String.fromCharCode(i);
     // console.log('key ' + i + ': ' + c);
     keyStates[c] = false;
 }
@@ -25,10 +26,9 @@ keyStates['control'] = false;
 keyStates['alt'] = false;
 keyStates['shift'] = false;
 
-THREE.OrbitControls = function(camera, domElement) {
+THREE.OrbitControls = function(camera) {
 
     this.camera = camera;
-    // this.domElement = (domElement !== undefined) ? domElement : document;
 
     this.enabled = true;
 
@@ -37,10 +37,7 @@ THREE.OrbitControls = function(camera, domElement) {
     this.userPanSpeed = 0.1;
 
     // start near origin facing along y-axis
-    this.position0 = new THREE.Vector3(
-        camera.position.x,
-        camera.position.y,
-        camera.position.z);
+    this.position0 = new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z);
     this.horizontalAngle0 = 0.0;
     this.verticalAngle0 = Math.PI / 2;
 
@@ -67,9 +64,6 @@ THREE.OrbitControls = function(camera, domElement) {
     // events
     window.addEventListener('keydown', onKeyDown, false);
     window.addEventListener('keyup', onKeyUp, false);
-
-    // document.addEventListener('keydown', onKeyDown, false);
-    // document.addEventListener('keyup', onKeyUp, false);
 
 };
 
@@ -191,14 +185,14 @@ THREE.OrbitControls.prototype.handleKeys = function() {
 };
 
 onKeyDown = function(event) {
-    var key = event.key.toLowerCase();
+    let key = event.key.toLowerCase();
     if (key in keyStates) {
         keyStates[key] = true;
     }
 };
 
 onKeyUp = function(event) {
-    var key = event.key.toLowerCase();
+    let key = event.key.toLowerCase();
     if (key in keyStates) {
         keyStates[key] = false;
     }

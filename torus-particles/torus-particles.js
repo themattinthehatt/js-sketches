@@ -1,9 +1,8 @@
 /**
- * torus-particles is a gravitational particle simulation. A point mass that 
- * moves around a torus knot provides the gravitational force that drives the 
- * dynamics of the particles, which do *not* interact with each other. An 
- * additional spring force acts to bring each particle back to its initial 
- * position
+ * torus-particles is a gravitational particle simulation. A point mass that moves around a torus
+ * knot provides the gravitational force that drives the dynamics of the particles, which do *not*
+ * interact with each other. An additional spring force acts to bring each particle back to its
+ * initial position
  * 
  * Good parameter settings:
  * p = 3; q = 2; mass = 0.1; exponent = 0.2; speed = 0.92
@@ -77,13 +76,13 @@ var fracCurr = fracMax;     // current multiplier (fraction of fracMax)
 // keep track of time
 var clock;
 
-// Initialize the demo
-initializeDemo();
+// initialize the demo
+initializeScene();
 
-// Animate the scene (map the 3D world to the 2D scene)
+// animate the scene (map the 3D world to the 2D scene)
 updateScene();
 
-function initializeDemo() {
+function initializeScene() {
     // control degree of motion in particles
     clock = new THREE.Clock(true);
 
@@ -170,11 +169,11 @@ function updateScene() {
     // subject particles to gravitational and spring forces
     updateParticles();
 
-    // Define the function which is called by the browser supported timer loop
-    requestAnimationFrame(updateScene);
-
     // map the 3D scene down to the 2D screen (render the frame)
     scene.renderScene();
+
+    // request animation for next update
+    requestAnimationFrame(updateScene);
 }
 
 function updateGravity() {
