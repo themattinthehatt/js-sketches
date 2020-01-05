@@ -11,36 +11,36 @@
  */
 
 // user parameters - gravitational force
-var SHOW_TORUS = false;     // display torus knot that center of mass follows
-var P_INIT = 3.0;           // parameter 1 for torus knot
-var Q_INIT = 2.0;           // parameter 2 for torus knot
-var MASS = 0.1;             // gravitational mass
-var EXPONENT = 0.1;         // exponent on gravitational-like force law
-var SPEED = 0.92;           // speed that mass travels around torus knot
+let SHOW_TORUS = false;     // display torus knot that center of mass follows
+let P_INIT = 3.0;           // parameter 1 for torus knot
+let Q_INIT = 2.0;           // parameter 2 for torus knot
+let MASS = 0.1;             // gravitational mass
+let EXPONENT = 0.1;         // exponent on gravitational-like force law
+let SPEED = 0.92;           // speed that mass travels around torus knot
 
 // user parameters - spring force
-var DAMP_VEL_PARAM = 0.0;   // coefficient of speed damping for spring force
-var DAMP_POS_PARAM = 0.0;   // spring coefficient
+let DAMP_VEL_PARAM = 0.0;   // coefficient of speed damping for spring force
+let DAMP_POS_PARAM = 0.0;   // spring coefficient
 
 // user parameters - particles
-var NUM_PARTICLES = 100000; // number of particles to simulate
-var CYCLE_COLOR = true;     // base color of particles cycles through huespace
-var BASE_HUE = 0.0;         // base hue of particles
-var HUE_FREQ = 0.05;        // frequency of hue cycling
+let NUM_PARTICLES = 100000; // number of particles to simulate
+let CYCLE_COLOR = true;     // base color of particles cycles through huespace
+let BASE_HUE = 0.0;         // base hue of particles
+let HUE_FREQ = 0.05;        // frequency of hue cycling
 
 // user parameters - dynamics controller
-var USE_CONTROLLER = true;  // periodically return particles to initial pos
-var FREE_FRAMES = 400;      // number of frames without spring force
-var RESET_FRAMES = 300;     // number of frames with spring force
-var VEL_COEFF = 0.4;        // maximum velocity coefficient for spring force
-var POS_COEFF = 0.025;      // maximum position coefficient for spring force
+let USE_CONTROLLER = true;  // periodically return particles to initial pos
+let FREE_FRAMES = 400;      // number of frames without spring force
+let RESET_FRAMES = 300;     // number of frames with spring force
+let VEL_COEFF = 0.4;        // maximum velocity coefficient for spring force
+let POS_COEFF = 0.025;      // maximum position coefficient for spring force
 
 // set up user parameters in gui
-var gui;
-var options = setupDatGUI();
+let gui;
+let options = setupDatGUI();
 
 // allocate the scene object, and set the camera position
-var scene = new SCENE.Scene({
+let scene = new SCENE.Scene({
     cameraPos: [-150, 0, 0],
     controls: true,
     displayStats: true
@@ -49,32 +49,32 @@ var scene = new SCENE.Scene({
 // declare global variables
 
 // particle dynamics info
-var particleSystem;         // particle mesh
-var pos_og = [];            // initial position
-var pos = [];               // particle positions
-var vel = [];               // particle velocities
-var acc = [];               // particle accelerations
-var color = [];             // particle colors
-var maxLen = 5.0;           // parameter for dynamic control of particle colors
-var phase = 0.0;            // phase offset for color control
+let particleSystem;         // particle mesh
+let pos_og = [];            // initial position
+let pos = [];               // particle positions
+let vel = [];               // particle velocities
+let acc = [];               // particle accelerations
+let color = [];             // particle colors
+let maxLen = 5.0;           // parameter for dynamic control of particle colors
+let phase = 0.0;            // phase offset for color control
 
 // gravity info
-var gravCenter;             // location of center of gravity
+let gravCenter;             // location of center of gravity
 
 // torus knot parameters
-var RADIUS = 20.0;          // radius of torus
-var radius = 2.0;           // radius of torus segments
-var torusKnot;              // torus knot mesh
-var mult = 1.0;             // change radius of torus trajectory relative to
+let RADIUS = 20.0;          // radius of torus
+let radius = 2.0;           // radius of torus segments
+let torusKnot;              // torus knot mesh
+let mult = 1.0;             // change radius of torus trajectory relative to
                             // TorusKnotGeometry (0.5 for correspondence)
 
 // for dynamics controller
-var frameCount = 0;         // keep track of frames
-var fracMax = 2.5;          // multiplier on initial positions to smooth reset
-var fracCurr = fracMax;     // current multiplier (fraction of fracMax)
+let frameCount = 0;         // keep track of frames
+let fracMax = 2.5;          // multiplier on initial positions to smooth reset
+let fracCurr = fracMax;     // current multiplier (fraction of fracMax)
 
 // keep track of time
-var clock;
+let clock;
 
 // initialize the demo
 initializeScene();
@@ -97,6 +97,7 @@ function initializeScene() {
 
     // create center of gravity
     gravCenter = new THREE.Vector3(0, 0, 0);
+
 }
 
 function createParticleSystem() {
@@ -108,12 +109,11 @@ function createParticleSystem() {
     acc = [];       // particle accelerations
     color = [];     // particle colors
 
-    // allocate a plain geometry that will hold all of the vertices which are
-    // the 'particles'
-    var particles = new THREE.Geometry();
+    // allocate a plain geometry that will hold all of the vertices which are the 'particles'
+    let particles = new THREE.Geometry();
     // create the vertices and add them to the particle's geometry
-    var phi, theta, x, y, z;
-    for (var i = 0; i < options.numParticles; i++) {
+    let phi, theta, x, y, z;
+    for (let i = 0; i < options.numParticles; i++) {
 
         // random initial position on the surface of a sphere
         phi = Math.random() * Math.PI;
@@ -123,9 +123,9 @@ function createParticleSystem() {
         y = RADIUS * Math.sin(phi) * Math.sin(theta);
 
         // add vertices to particle system
-        var particle = new THREE.Vector3(x, y, z);
+        let particle = new THREE.Vector3(x, y, z);
         particles.vertices.push(particle);
-        var col = new THREE.Color(0, 0, 0);
+        let col = new THREE.Color(0, 0, 0);
         color.push(col.setHSL(0, 1, 0));
 
         // keep track of particle info
@@ -137,7 +137,7 @@ function createParticleSystem() {
     particles.colors = color;
 
     // create particle system mesh
-    var particleMaterial = new THREE.PointsMaterial({
+    let particleMaterial = new THREE.PointsMaterial({
         vertexColors: THREE.VertexColors,
         size: 0.4,
         sizeAttenuation: false
@@ -147,12 +147,8 @@ function createParticleSystem() {
 }
 
 function addTorusKnot() {
-    var geometry = new THREE.TorusKnotGeometry(
-        RADIUS, radius, 256, 8, options.p, options.q);
-    var material = new THREE.MeshPhongMaterial({
-        color: 0x333333,
-        side: THREE.DoubleSide
-    });
+    let geometry = new THREE.TorusKnotGeometry(RADIUS, radius, 256, 8, options.p, options.q);
+    let material = new THREE.MeshPhongMaterial({color: 0x333333, side: THREE.DoubleSide});
     torusKnot = new THREE.Mesh(geometry, material);
     scene.add(torusKnot);
 }
@@ -178,11 +174,11 @@ function updateScene() {
 
 function updateGravity() {
 
-    var p = options.p;
-    var q = options.q;
-    var r;
+    let p = options.p;
+    let q = options.q;
+    let r;
 
-    var phi = options.speed * clock.getElapsedTime();
+    let phi = options.speed * clock.getElapsedTime();
 
     r = 2.0 + Math.cos(q * phi);
 
@@ -198,39 +194,34 @@ function updateParticles() {
     // update parameters based on controller
     updateController();
 
-    /*
-     * UPDATE PARTICLE DYNAMICS
-     */
+    // UPDATE PARTICLE DYNAMICS
 
     // for dynamic updates to color
-    var temp = 0.0;
-    var maxLenNew = 0.0;
-    var hueTrans = 0.16;
-    var baseHue = options.baseHue;
+    let temp = 0.0;
+    let maxLenNew = 0.0;
+    let hueTrans = 0.16;
+    let baseHue = options.baseHue;
     if (options.cycleColor) {
         baseHue = options.baseHue + 0.5 +
             0.5 * Math.cos(options.colorFreq * clock.getElapsedTime() + phase);
     }
 
     // define vertices and colors for easy access
-    var verts = particleSystem.geometry.vertices;
-    var cols = particleSystem.geometry.colors;
+    let verts = particleSystem.geometry.vertices;
+    let cols = particleSystem.geometry.colors;
 
     // loop through particles and update
-    for (var i = 0; i < verts.length; i++) {
+    for (let i = 0; i < verts.length; i++) {
 
         // calculate gravitational force
-        var force = new THREE.Vector3(
-            gravCenter.x, gravCenter.y, gravCenter.z).sub(verts[i]);
-        var len = force.length();
-        force.normalize().multiplyScalar(
-            options.mass / (Math.pow(len, options.exponent)));
+        let force = new THREE.Vector3(gravCenter.x, gravCenter.y, gravCenter.z).sub(verts[i]);
+        let len = force.length();
+        force.normalize().multiplyScalar(options.mass / (Math.pow(len, options.exponent)));
 
         // calculate damped spring force
         // acc += -p1*velocity - k*displacement
-        // multiply original position by fracCurr during reset to smooth
-        // appearance of transitions
-        var forceReg = new THREE.Vector3(
+        // multiply original position by fracCurr during reset to smooth appearance of transitions
+        let forceReg = new THREE.Vector3(
             pos_og[i].x, pos_og[i].y, pos_og[i].z).multiplyScalar(
                 1.0 + fracCurr).sub(verts[i]);
         forceReg.multiplyScalar(options.dampPos);
@@ -249,8 +240,8 @@ function updateParticles() {
         acc[i].multiplyScalar(0.0);
 
         // set color based on velocity
-        var speed = vel[i].length();
-        var speedScaled = speed / (maxLen * 1.5);
+        let speed = vel[i].length();
+        let speedScaled = speed / (maxLen * 1.5);
         if (speedScaled < 0.5) {
             // move color from red to yellow
             temp = baseHue + speedScaled * 2.0 * hueTrans;
@@ -274,8 +265,8 @@ function updateParticles() {
 }
 
 function resetParticles() {
-    var phi, theta, x, y, z;
-    for (var i = 0; i < options.numParticles; i++) {
+    let phi, theta, x, y, z;
+    for (let i = 0; i < options.numParticles; i++) {
         // random initial position on the surface of a sphere
         phi = Math.random() * Math.PI;
         theta = Math.random() * 2.0 * Math.PI;
@@ -336,16 +327,15 @@ function resetController() {
 
 function setupDatGUI() {
 
-    var options = [];
+    let options = [];
 
     // initialize gui object
     gui = new dat.GUI();
 
-
-    /*
-     * add gravitational force options to gui
-     */
-    var f1 = gui.addFolder('Gravity parameters');
+    // --------------------------------------
+    // add gravitational force options to gui
+    // --------------------------------------
+    let f1 = gui.addFolder('Gravity parameters');
 
     // show torus radio button
     options.torus = SHOW_TORUS;
@@ -358,7 +348,7 @@ function setupDatGUI() {
     });
 
     // p parameter for torus list
-    var pList = [1, 2, 3, 4, 5];
+    let pList = [1, 2, 3, 4, 5];
     options.p = P_INIT;
     f1.add(options, 'p', pList).onChange(function() {
         if (options.torus) {
@@ -368,7 +358,7 @@ function setupDatGUI() {
     });
 
     // q parameter for torus list
-    var qList = [1, 2, 3, 4, 5];
+    let qList = [1, 2, 3, 4, 5];
     options.q = Q_INIT;
     f1.add(options, 'q', qList).onChange(function() {
         if (options.torus) {
@@ -390,10 +380,10 @@ function setupDatGUI() {
     f1.add(options, 'speed', 0.0, 5.0);
 
 
-    /*
-     * add spring force options to gui
-     */
-    var f2 = gui.addFolder('Spring parameters');
+    // -------------------------------
+    // add spring force options to gui
+    // -------------------------------
+    let f2 = gui.addFolder('Spring parameters');
 
     // coefficient of damping on velocity term slider
     options.dampVel = DAMP_VEL_PARAM;
@@ -404,10 +394,10 @@ function setupDatGUI() {
     f2.add(options, 'dampPos', 0.0, 0.01);
 
 
-    /*
-     * add particle options to gui
-     */
-    var f3 = gui.addFolder('Particle parameters');
+    // ---------------------------
+    // add particle options to gui
+    // ---------------------------
+    let f3 = gui.addFolder('Particle parameters');
 
     // change number of particles text field
     options.numParticles = NUM_PARTICLES;
@@ -436,15 +426,13 @@ function setupDatGUI() {
     options.cycleColor = CYCLE_COLOR;
     f3.add(options, 'cycleColor').onChange(function() {
         if (options.cycleColor) {
-            // if turning on cycling, start with current hue by making cosine
-            // term go to 1
+            // if turning on cycling, start with current hue by making cosine term go to 1
             phase = -1.0 * options.colorFreq * clock.getElapsedTime();
         } else {
             // if turning off cycling, reset baseHue to current hue
             options.baseHue = options.baseHue + 0.5 +
                 0.5 * Math.cos(options.colorFreq * clock.getElapsedTime() + phase)
         }
-
     });
 
     // change base color with color controller
@@ -465,10 +453,10 @@ function setupDatGUI() {
     f3.add(options, 'colorFreq', 0.0, 0.5);
 
 
-    /*
-     * add controller options to gui
-     */
-    var f4 = gui.addFolder('Controller parameters');
+    // -----------------------------
+    // add controller options to gui
+    // -----------------------------
+    let f4 = gui.addFolder('Controller parameters');
 
     // controller radio button
     options.useController = USE_CONTROLLER;
@@ -511,9 +499,9 @@ function setupDatGUI() {
     f4.add(options, 'posCoeff', 0.0, 0.10);
 
 
-    /*
-     * add reset button
-     */
+    // ----------------
+    // add reset button
+    // ----------------
     options.reset = function() {
         resetParticles();
         resetController();
