@@ -6,9 +6,9 @@
 let SCENE = {revision: '03'};
 
 // some constants
-const X_AXIS = 0;
-const Y_AXIS = 1;
-const Z_AXIS = 2;
+const X_AXIS = 0;  // red
+const Y_AXIS = 1;  // green
+const Z_AXIS = 2;  // blue
 
 SCENE.Scene = function(parameters) {
 
@@ -31,7 +31,7 @@ SCENE.Scene = function(parameters) {
     this.fov = 45;
     this.near = 0.5; //0.01;
     this.far = 10000;
-    this.cameraPos = [0, 20, 40];
+    this.cameraPos = [150, 0, 0];
     this.orthoSize = 1;
 
     // camera controls
@@ -49,7 +49,7 @@ SCENE.Scene = function(parameters) {
     this.skybox = false;
 
     // axes
-    this.axesHeight = 0;
+    this.axesHeight = 10;
 
     // info displays
     this.displayStats = false;
@@ -243,7 +243,7 @@ SCENE.Scene.prototype.setDefaultCamera = function(jsonObj) {
     }
 };
 
-SCENE.Scene.prototype.addCamera = function(jsonObj, index) {
+SCENE.Scene.prototype.addCamera = function(jsonObj) {
     // assign the current/default global values to the local values
     let perspective = this.perspective;
     let cameraPos   = this.cameraPos;
@@ -280,18 +280,11 @@ SCENE.Scene.prototype.addCamera = function(jsonObj, index) {
     camera.lookAt(this.scene.position);
     camera.updateProjectionMatrix();
 
-    if (index === undefined)
-        this.cameras.push(camera);
-    else
-        // TODO: doesn't use index
-        this.cameras.splice(0, 0, camera);
-
+    this.cameras.push(camera);
     this.scene.add(camera);
 
     if (this.controls === true && this.renderer !== null) {
-        // TODO: doesn't match camera index
-        this.orbitControls[this.cameras.length-1] =
-            new THREE.OrbitControls(camera, this.renderer.domElement);
+        this.addControls(this.cameras[this.cameras.length-1]);
     }
 
     // set the "default" camera if not already done
@@ -315,11 +308,6 @@ SCENE.Scene.prototype.getCamera = function(index) {
 /**
  * Set up the camera controls
  */
-SCENE.Scene.prototype.setDefaultControls = function() {
-    if (this.cameras.length > 0)
-        this.addControls(this.cameras[0]);
-};
-
 SCENE.Scene.prototype.addControls = function(camera) {
     if (camera !== null && typeof camera !== 'undefined') {
         this.orbitControls.push(new THREE.OrbitControls(camera));
@@ -331,6 +319,7 @@ SCENE.Scene.prototype.updateControls = function() {
     for (let i = 0; i < this.orbitControls.length; i++) {
         this.orbitControls[i].update();
     }
+    console.log(this.orbitControls.length)
 };
 
 /**
@@ -486,9 +475,9 @@ SCENE.Scene.prototype.clearLights = function(lightArray) {
  */
 SCENE.Scene.prototype.drawAxis = function(axis, axisColor, axisHeight) {
 
-    let AXIS_RADIUS   =	axisHeight/200.0;
+    let AXIS_RADIUS   =	axisHeight / 200.0;
     let	AXIS_HEIGHT   =	axisHeight;
-    let	AXIS_STEP     =	axisHeight/20.0;
+    let	AXIS_STEP     =	axisHeight / 20.0;
     let AXIS_SEGMENTS = 32;
     let	AXIS_GRAY     = 0x777777;
     let	AXIS_WHITE    = 0xEEEEEE;

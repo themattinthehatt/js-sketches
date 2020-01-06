@@ -32,13 +32,12 @@ THREE.OrbitControls = function(camera) {
 
     this.enabled = true;
 
-    this.userZoomSpeed = 1.0;
     this.userRotateSpeed = 0.01;
     this.userPanSpeed = 1.0;
 
-    // start near origin facing along y-axis
+    // start near origin facing along negative x-axis
     this.position0 = new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z);
-    this.horizontalAngle0 = 0.0;
+    this.horizontalAngle0 = Math.PI;
     this.verticalAngle0 = Math.PI / 2;
 
     this.position = this.position0;
@@ -66,9 +65,6 @@ THREE.OrbitControls = function(camera) {
     window.addEventListener('keyup', onKeyUp, false);
 
 };
-
-// subclass event dispatcher
-THREE.OrbitControls.prototype = Object.create(THREE.EventDispatcher.prototype);
 
 THREE.OrbitControls.prototype.moveRight = function(distance) {
     this.position.addScaledVector(this.right.clone(), distance);

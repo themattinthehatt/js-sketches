@@ -4,8 +4,8 @@
  * particles, which do *not* interact with each other.
  *
  * TODO:
- * support for multiple masses
- * mass random walks
+ * [sun] support for multiple masses
+ * [sun] mass random walks
  * repellant force between masses
  * allow one mass at a time to not feel effects of repellant force ("leader" mass)
  */
@@ -13,10 +13,11 @@
 option_defaults = {};
 
 // user parameters - masses
-option_defaults.numMasses = 1;         // display torus knot that center of mass follows
+option_defaults.numMasses = 2;         // display torus knot that center of mass follows
 option_defaults.mass = 0.1;            // base gravitational mass
 option_defaults.exponent = 0.1;        // exponent on gravitational-like force law
 option_defaults.speed = 1.0;           // base speed of random walk
+option_defaults.massRadii = 5;        // base radii of masses
 option_defaults.renderMasses = true;   // render masses as spheres
 
 // user parameters - particles
@@ -31,7 +32,7 @@ let options = setupDatGUI();
 
 // allocate the scene object, and set the camera position
 let scene = new SCENE.Scene({
-    cameraPos: [-150, 0, 0],
+    cameraPos: [150, 0, 0],
     controls: true,
     displayStats: true
 });
@@ -96,8 +97,15 @@ function updateScene() {
  * Mass functions
  */
 function createMasses() {
-    massCenters.push(new THREE.Vector3(0, 0, 0));
-    massMasses.push(options.mass)
+    massCenters = [];
+    massMasses = [];
+    for (let i = 0; i < options.numMasses; i++) {
+        massCenters.push(new THREE.Vector3(
+            100 * (Math.random() - 0.5),
+            100 * (Math.random() - 0.5),
+            100 * (Math.random() - 0.5)));
+        massMasses.push(options.mass)
+    }
 }
 
 function updateMasses() {
@@ -117,19 +125,32 @@ function updateMasses() {
 
 }
 
-function resetMasses() {}
+function resetMasses() {
+    // create centers of gravity
+    createMasses();
+    if (options.renderMasses) {
+        removeMassMeshes();
+        addMassMeshes();
+    }
+}
 
 function addMassMeshes() {
-    let geometry = new THREE.SphereGeometry(
-        100 * massMasses[0], 64, 32);
-    let material = new THREE.MeshPhongMaterial(
-        {color: 0x333333, side: THREE.DoubleSide});
-    massMeshes.push(new THREE.Mesh(geometry, material));
-    scene.add(massMeshes[0]);
+    massMeshes = [];
+    for (let i = 0; i < massCenters.length; i++) {
+        let geometry = new THREE.SphereGeometry(
+            options.massRadii, 64, 32);
+        let material = new THREE.MeshPhongMaterial(
+            {color: 0x333333, side: THREE.DoubleSide});
+        massMeshes.push(new THREE.Mesh(geometry, material));
+        massMeshes[i].position.set(massCenters[i].x, massCenters[i].y, massCenters[i].z);
+        scene.add(massMeshes[i]);
+    }
 }
 
 function removeMassMeshes() {
-    scene.remove(massMeshes[0])
+    for (let i = 0; i < massCenters.length; i++) {
+        scene.remove(massMeshes[i])
+    }
 }
 
 /*
@@ -295,7 +316,7 @@ function setupDatGUI() {
     let mList = [1, 2, 4, 6, 8, 10];
     options.numMasses = option_defaults.numMasses;
     f1.add(options, 'numMasses', mList).onChange(function() {
-        updateMasses();
+        resetMasses();
     });
 
     // base mass slider
@@ -310,6 +331,15 @@ function setupDatGUI() {
     options.speed = option_defaults.speed;
     f1.add(options, 'speed', 0.0, 5.0);
 
+    // mass sizes slider
+    options.massRadii = option_defaults.massRadii;
+    f1.add(options, 'massRadii', 1, 10).onChange(function() {
+        if (options.renderMasses) {
+            removeMassMeshes();
+            addMassMeshes();
+        }
+    });
+
     // render masses radio button
     options.renderMasses = option_defaults.renderMasses;
     f1.add(options, 'renderMasses').onChange(function() {
@@ -319,12 +349,6 @@ function setupDatGUI() {
             removeMassMeshes();
         }
     });
-
-    option_defaults.numParticles = 100000; // number of particles to simulate
-    option_defaults.cycleColor = true;     // base color of particles cycles through huespace
-    option_defaults.base_hue = 0.0;        // base hue of particles
-    option_defaults.hue_freq = 0.05;       // frequency of hue cycling
-
 
     // ---------------------------
     // add particle options to gui
@@ -387,7 +411,7 @@ function setupDatGUI() {
     // ----------------
     options.reset = function() {
         resetMasses();
-        resetParticles();
+        // resetParticles();
     };
     gui.add(options, 'reset');
 
