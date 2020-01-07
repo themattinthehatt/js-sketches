@@ -1,6 +1,5 @@
 /**
- * Adapted from http://www.geofx.com
- *  @author rkwright
+ * Adapted from http://www.geofx.com and @author rkwright
  */
 
 let SCENE = {revision: '03'};
@@ -319,7 +318,6 @@ SCENE.Scene.prototype.updateControls = function() {
     for (let i = 0; i < this.orbitControls.length; i++) {
         this.orbitControls[i].update();
     }
-    console.log(this.orbitControls.length)
 };
 
 /**

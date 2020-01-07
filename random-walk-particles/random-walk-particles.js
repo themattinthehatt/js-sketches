@@ -4,27 +4,53 @@
  * particles, which do *not* interact with each other.
  *
  * TODO:
- * [sun] support for multiple masses
- * [sun] mass random walks
  * repellant force between masses
  * allow one mass at a time to not feel effects of repellant force ("leader" mass)
  */
 
+// -------------------------
+//     define parameters
+// -------------------------
+
 option_defaults = {};
 
 // user parameters - masses
-option_defaults.numMasses = 2;         // display torus knot that center of mass follows
+option_defaults.numMasses = 1;         // display torus knot that center of mass follows
 option_defaults.mass = 0.1;            // base gravitational mass
 option_defaults.exponent = 0.1;        // exponent on gravitational-like force law
 option_defaults.speed = 1.0;           // base speed of random walk
-option_defaults.massRadii = 5;        // base radii of masses
+option_defaults.massRadii = 5;         // base radii of masses
 option_defaults.renderMasses = true;   // render masses as spheres
 
 // user parameters - particles
 option_defaults.numParticles = 100000; // number of particles to simulate
 option_defaults.cycleColor = true;     // base color of particles cycles through huespace
-option_defaults.baseHue = 0.0;        // base hue of particles
-option_defaults.hueFreq = 0.05;       // frequency of hue cycling
+option_defaults.baseHue = 0.0;         // base hue of particles
+option_defaults.hueFreq = 0.05;        // frequency of hue cycling
+
+// internal parameters - gravity info
+let massCentersInit = [];              // location of each center of gravity
+let massCenters = [];                  // location of each center of gravity
+let massMasses = [];                   // mass of each center of gravity
+let massMeshes = [];
+let randomWalkers = [];
+
+// internal parameters - particle dynamics info
+let particleSystem;                    // particle mesh
+let pos_og = [];                       // initial position
+let pos = [];                          // particle positions
+let vel = [];                          // particle velocities
+let acc = [];                          // particle accelerations
+let color = [];                        // particle colors
+let maxLen = 5.0;                      // parameter for dynamic control of particle colors
+let phase = 0.0;                       // phase offset for color control
+
+// keep track of time
+let clock;
+
+// -------------------
+//     build scene
+// -------------------
 
 // set up user parameters in gui
 let gui;
@@ -37,27 +63,7 @@ let scene = new SCENE.Scene({
     displayStats: true
 });
 
-// declare global variables
-
-// gravity info
-let massCenters = [];       // location of each center of gravity
-let massMasses = [];        // mass of each center of gravity
-let massMeshes = [];
-
-// particle dynamics info
-let particleSystem;         // particle mesh
-let pos_og = [];            // initial position
-let pos = [];               // particle positions
-let vel = [];               // particle velocities
-let acc = [];               // particle accelerations
-let color = [];             // particle colors
-let maxLen = 5.0;           // parameter for dynamic control of particle colors
-let phase = 0.0;            // phase offset for color control
-
-// keep track of time
-let clock;
-
-// initialize the demo
+// initialize the sketch
 initializeScene();
 
 // animate the scene (map the 3D world to the 2D scene)
@@ -69,6 +75,7 @@ function initializeScene() {
 
     // create centers of gravity
     createMasses();
+    createRandomWalkers();
     if (options.renderMasses) {
         addMassMeshes()
     }
@@ -86,7 +93,7 @@ function updateScene() {
     // subject particles to gravitational and spring forces
     // updateParticles();
 
-    // map the 3D scene down to the 2D screen (render the frame)
+    // map the 3D scene down to the 2D screen (render the frame) (also updates camera controls)
     scene.renderScene();
 
     // request animation for next update
@@ -97,37 +104,37 @@ function updateScene() {
  * Mass functions
  */
 function createMasses() {
+    massCentersInit = [];
     massCenters = [];
     massMasses = [];
     for (let i = 0; i < options.numMasses; i++) {
-        massCenters.push(new THREE.Vector3(
+        let pos = new THREE.Vector3(
             100 * (Math.random() - 0.5),
             100 * (Math.random() - 0.5),
-            100 * (Math.random() - 0.5)));
+            100 * (Math.random() - 0.5));
+        massCentersInit.push(pos);
+        massCenters.push(pos);
         massMasses.push(options.mass)
     }
 }
 
 function updateMasses() {
-
-    // let p = options.p;
-    // let q = options.q;
-    // let r;
-    //
-    // let phi = options.speed * clock.getElapsedTime();
-    //
-    // r = 2.0 + Math.cos(q * phi);
-    //
-    // // center of gravity moves along torus knot
-    // gravCenter.x = mult * RADIUS * r * Math.cos(p * phi);
-    // gravCenter.y = mult * RADIUS * r * Math.sin(p * phi);
-    // gravCenter.z = mult * RADIUS * Math.sin(q * phi);
-
+    for (let i = 0; i < options.numMasses; i++) {
+        let position = randomWalkers[i].getNextVal();
+        console.log(position);
+        massCenters[i] = massCentersInit[i].addScaledVector(position, 1);
+        console.log(massCenters[i]);
+        if (options.renderMasses) {
+            massMeshes[i].position.set(massCenters[i].x, massCenters[i].y, massCenters[i].z);
+            massMeshes[i].geometry.verticesNeedUpdate = true
+        }
+    }
 }
 
 function resetMasses() {
     // create centers of gravity
     createMasses();
+    createRandomWalkers();
     if (options.renderMasses) {
         removeMassMeshes();
         addMassMeshes();
@@ -150,6 +157,13 @@ function addMassMeshes() {
 function removeMassMeshes() {
     for (let i = 0; i < massCenters.length; i++) {
         scene.remove(massMeshes[i])
+    }
+}
+
+function createRandomWalkers() {
+    randomWalkers = [];
+    for (let i = 0; i < options.numMasses; i++) {
+        randomWalkers.push(new CartesianRandomWalker(200))
     }
 }
 
