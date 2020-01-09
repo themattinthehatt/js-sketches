@@ -5,12 +5,12 @@ class Planets {
 
         this.scene = scene;
         this.options = options;
-        // numPlanets
-        // mass
-        // exponent
-        // speed
-        // radii
-        // renderPlanets
+        // numPlanets: number of planets
+        // mass: base planet mass
+        // exponent: exponent on gravitational-like force law
+        // speed: base speed of random walk
+        // radii: base radii of planets
+        // renderPlanets: render planets as spheres
 
         this.pos = [];           // location of each planet
         this.vel = [];           // velocity of each planet
@@ -99,45 +99,45 @@ class Planets {
 
     setupGUI(options, gui) {
 
-        let planets_ = this;
+        let planets = this;
 
         let f = gui.addFolder('Planet parameters');
 
         // number of masses dropdown
         let mList = [1, 2, 4, 6, 8, 10];
-        options.numPlanets = planets_.options.numPlanets;
+        options.numPlanets = planets.options.numPlanets;
         f.add(options, 'numPlanets', mList).onChange(function() {
-            planets_.reset();
+            planets.reset();
         });
 
         // base mass slider
-        options.mass = planets_.options.mass;
+        options.mass = planets.options.mass;
         f.add(options, 'mass', 0.0, 1.0);
 
         // gravitational force exponent slider
-        options.exponent = planets_.options.exponent;
+        options.exponent = planets.options.exponent;
         f.add(options, 'exponent', 0.1, 2.0);
 
         // speed of random walk slider
-        options.speed = planets_.options.speed;
+        options.speed = planets.options.speed;
         f.add(options, 'speed', 0.0, 0.1);
 
         // mass sizes slider
-        options.radii = planets_.options.radii;
+        options.radii = planets.options.radii;
         f.add(options, 'radii', 1, 10).onChange(function() {
             if (options.renderPlanets) {
-                planets_.removeMeshes();
-                planets_.addMeshes();
+                planets.removeMeshes();
+                planets.addMeshes();
             }
         });
 
         // render masses radio button
-        options.renderPlanets = planets_.options.renderPlanets;
+        options.renderPlanets = planets.options.renderPlanets;
         f.add(options, 'renderPlanets').onChange(function() {
             if (options.renderPlanets) {
-                planets_.addMeshes();
+                planets.addMeshes();
             } else {
-                planets_.removeMeshes();
+                planets.removeMeshes();
             }
         });
 
