@@ -4,6 +4,9 @@
  * particles, which do *not* interact with each other.
  *
  * TODO:
+ * make random walk update velocity rather than position
+ * refactor masses into own class
+ * constrain masses to lie on sphere/circle
  * repellant force between masses
  * allow one mass at a time to not feel effects of repellant force ("leader" mass)
  */
@@ -18,7 +21,7 @@ option_defaults = {};
 option_defaults.numMasses = 1;         // display torus knot that center of mass follows
 option_defaults.mass = 0.1;            // base gravitational mass
 option_defaults.exponent = 0.1;        // exponent on gravitational-like force law
-option_defaults.speed = 1.0;           // base speed of random walk
+option_defaults.speed = 0.001;         // base speed of random walk
 option_defaults.massRadii = 5;         // base radii of masses
 option_defaults.renderMasses = true;   // render masses as spheres
 
@@ -31,6 +34,8 @@ option_defaults.hueFreq = 0.05;        // frequency of hue cycling
 // internal parameters - gravity info
 let massCentersInit = [];              // location of each center of gravity
 let massCenters = [];                  // location of each center of gravity
+let massVel = [];                      // velocity of each center of gravity
+let massAcc = [];                      // acceleration of each center of gravity
 let massMasses = [];                   // mass of each center of gravity
 let massMeshes = [];
 let randomWalkers = [];
@@ -106,6 +111,8 @@ function updateScene() {
 function createMasses() {
     massCentersInit = [];
     massCenters = [];
+    massVel = [];
+    massAcc = [];
     massMasses = [];
     for (let i = 0; i < options.numMasses; i++) {
         let pos = new THREE.Vector3(
@@ -114,16 +121,16 @@ function createMasses() {
             100 * (Math.random() - 0.5));
         massCentersInit.push(pos);
         massCenters.push(pos);
+        massVel.push(new THREE.Vector3(0.0, 0.0, 0.0));
         massMasses.push(options.mass)
     }
 }
 
 function updateMasses() {
     for (let i = 0; i < options.numMasses; i++) {
-        let position = randomWalkers[i].getNextVal();
-        console.log(position);
-        massCenters[i] = massCentersInit[i].addScaledVector(position, 1);
-        console.log(massCenters[i]);
+        let acceleration = randomWalkers[i].getNextVal();
+        massVel[i].addScaledVector(acceleration, options.speed);
+        massCenters[i].add(massVel[i]);
         if (options.renderMasses) {
             massMeshes[i].position.set(massCenters[i].x, massCenters[i].y, massCenters[i].z);
             massMeshes[i].geometry.verticesNeedUpdate = true
@@ -163,7 +170,7 @@ function removeMassMeshes() {
 function createRandomWalkers() {
     randomWalkers = [];
     for (let i = 0; i < options.numMasses; i++) {
-        randomWalkers.push(new CartesianRandomWalker(200))
+        randomWalkers.push(new CartesianRandomWalker(10))
     }
 }
 
@@ -343,7 +350,7 @@ function setupDatGUI() {
 
     // speed of random walk slider
     options.speed = option_defaults.speed;
-    f1.add(options, 'speed', 0.0, 5.0);
+    f1.add(options, 'speed', 0.0, 0.1);
 
     // mass sizes slider
     options.massRadii = option_defaults.massRadii;
