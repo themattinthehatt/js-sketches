@@ -1,15 +1,15 @@
 /**
- * random-walk-particles is a gravitational particle simulation. Multiple point masses move around
- * according to a random walk provides the gravitational force that drives the dynamics of the
- * particles, which do *not* interact with each other.
+ * random-walk-particles is a gravitational particle simulation. Multiple point masses (planets)
+ * move around according to a random walk provides the gravitational force that drives the dynamics
+ * of the particles (satellites), which do *not* interact with each other.
  *
  * TODO:
- * make random walk update velocity rather than position
  * refactor masses into own class
  * constrain masses to lie on sphere/circle
  * repellant force between masses
  * allow one mass at a time to not feel effects of repellant force ("leader" mass)
  */
+
 
 // -------------------------
 //     define parameters
@@ -18,12 +18,12 @@
 option_defaults = {};
 
 // user parameters - masses
-option_defaults.numMasses = 1;         // display torus knot that center of mass follows
+option_defaults.numPlanets = 1;        // display torus knot that center of mass follows
 option_defaults.mass = 0.1;            // base gravitational mass
 option_defaults.exponent = 0.1;        // exponent on gravitational-like force law
 option_defaults.speed = 0.001;         // base speed of random walk
-option_defaults.massRadii = 5;         // base radii of masses
-option_defaults.renderMasses = true;   // render masses as spheres
+option_defaults.radii = 5;             // base radii of masses
+option_defaults.renderPlanets = true;  // render masses as spheres
 
 // user parameters - particles
 option_defaults.numParticles = 100000; // number of particles to simulate
@@ -31,14 +31,7 @@ option_defaults.cycleColor = true;     // base color of particles cycles through
 option_defaults.baseHue = 0.0;         // base hue of particles
 option_defaults.hueFreq = 0.05;        // frequency of hue cycling
 
-// internal parameters - gravity info
-let massCentersInit = [];              // location of each center of gravity
-let massCenters = [];                  // location of each center of gravity
-let massVel = [];                      // velocity of each center of gravity
-let massAcc = [];                      // acceleration of each center of gravity
-let massMasses = [];                   // mass of each center of gravity
-let massMeshes = [];
-let randomWalkers = [];
+// let satellites;
 
 // internal parameters - particle dynamics info
 let particleSystem;                    // particle mesh
@@ -57,16 +50,19 @@ let clock;
 //     build scene
 // -------------------
 
-// set up user parameters in gui
-let gui;
-let options = setupDatGUI();
-
 // allocate the scene object, and set the camera position
 let scene = new SCENE.Scene({
     cameraPos: [150, 0, 0],
     controls: true,
     displayStats: true
 });
+
+// initialize massive planets
+let planets = new Planets(option_defaults, scene);
+
+// set up user parameters in gui
+let gui;
+let options = setupDatGUI();
 
 // initialize the sketch
 initializeScene();
@@ -78,12 +74,8 @@ function initializeScene() {
     // control degree of motion in particles
     clock = new THREE.Clock(true);
 
-    // create centers of gravity
-    createMasses();
-    createRandomWalkers();
-    if (options.renderMasses) {
-        addMassMeshes()
-    }
+    // update planet options to params stored in gui
+    planets.options = options;
 
     // create particle system
     // particleSystem = createParticleSystem();
@@ -92,8 +84,8 @@ function initializeScene() {
 
 function updateScene() {
 
-    // update center of gravity
-    updateMasses();
+    // update planets
+    planets.update();
 
     // subject particles to gravitational and spring forces
     // updateParticles();
@@ -103,75 +95,6 @@ function updateScene() {
 
     // request animation for next update
     requestAnimationFrame(updateScene);
-}
-
-/*
- * Mass functions
- */
-function createMasses() {
-    massCentersInit = [];
-    massCenters = [];
-    massVel = [];
-    massAcc = [];
-    massMasses = [];
-    for (let i = 0; i < options.numMasses; i++) {
-        let pos = new THREE.Vector3(
-            100 * (Math.random() - 0.5),
-            100 * (Math.random() - 0.5),
-            100 * (Math.random() - 0.5));
-        massCentersInit.push(pos);
-        massCenters.push(pos);
-        massVel.push(new THREE.Vector3(0.0, 0.0, 0.0));
-        massMasses.push(options.mass)
-    }
-}
-
-function updateMasses() {
-    for (let i = 0; i < options.numMasses; i++) {
-        let acceleration = randomWalkers[i].getNextVal();
-        massVel[i].addScaledVector(acceleration, options.speed);
-        massCenters[i].add(massVel[i]);
-        if (options.renderMasses) {
-            massMeshes[i].position.set(massCenters[i].x, massCenters[i].y, massCenters[i].z);
-            massMeshes[i].geometry.verticesNeedUpdate = true
-        }
-    }
-}
-
-function resetMasses() {
-    // create centers of gravity
-    createMasses();
-    createRandomWalkers();
-    if (options.renderMasses) {
-        removeMassMeshes();
-        addMassMeshes();
-    }
-}
-
-function addMassMeshes() {
-    massMeshes = [];
-    for (let i = 0; i < massCenters.length; i++) {
-        let geometry = new THREE.SphereGeometry(
-            options.massRadii, 64, 32);
-        let material = new THREE.MeshPhongMaterial(
-            {color: 0x333333, side: THREE.DoubleSide});
-        massMeshes.push(new THREE.Mesh(geometry, material));
-        massMeshes[i].position.set(massCenters[i].x, massCenters[i].y, massCenters[i].z);
-        scene.add(massMeshes[i]);
-    }
-}
-
-function removeMassMeshes() {
-    for (let i = 0; i < massCenters.length; i++) {
-        scene.remove(massMeshes[i])
-    }
-}
-
-function createRandomWalkers() {
-    randomWalkers = [];
-    for (let i = 0; i < options.numMasses; i++) {
-        randomWalkers.push(new CartesianRandomWalker(10))
-    }
 }
 
 /*
@@ -328,48 +251,8 @@ function setupDatGUI() {
     // initialize gui object
     gui = new dat.GUI();
 
-    // -----------------------
-    // add mass options to gui
-    // -----------------------
-    let f1 = gui.addFolder('Mass parameters');
-
-    // number of masses dropdown
-    let mList = [1, 2, 4, 6, 8, 10];
-    options.numMasses = option_defaults.numMasses;
-    f1.add(options, 'numMasses', mList).onChange(function() {
-        resetMasses();
-    });
-
-    // base mass slider
-    options.mass = option_defaults.mass;
-    f1.add(options, 'mass', 0.0, 1.0);
-
-    // gravitational force exponent slider
-    options.exponent = option_defaults.exponent;
-    f1.add(options, 'exponent', 0.1, 2.0);
-
-    // speed of random walk slider
-    options.speed = option_defaults.speed;
-    f1.add(options, 'speed', 0.0, 0.1);
-
-    // mass sizes slider
-    options.massRadii = option_defaults.massRadii;
-    f1.add(options, 'massRadii', 1, 10).onChange(function() {
-        if (options.renderMasses) {
-            removeMassMeshes();
-            addMassMeshes();
-        }
-    });
-
-    // render masses radio button
-    options.renderMasses = option_defaults.renderMasses;
-    f1.add(options, 'renderMasses').onChange(function() {
-        if (options.renderMasses) {
-            addMassMeshes();
-        } else {
-            removeMassMeshes();
-        }
-    });
+    // add planet options to gui
+    planets.setupGUI(options, gui);
 
     // ---------------------------
     // add particle options to gui
@@ -431,7 +314,7 @@ function setupDatGUI() {
     // add reset button
     // ----------------
     options.reset = function() {
-        resetMasses();
+        planets.reset();
         // resetParticles();
     };
     gui.add(options, 'reset');
