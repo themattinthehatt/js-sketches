@@ -56,13 +56,6 @@ class CartesianRandomWalker {
     }
 }
 
-class SphericalRandomWalker {
-
-    constructor(n_samples) {
-        // TODO
-    }
-}
-
 // Standard Normal variate using Box-Muller transform.
 // https://stackoverflow.com/a/36481059
 function randn() {

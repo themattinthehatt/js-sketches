@@ -20,7 +20,7 @@ option_defaults = {};
 option_defaults.numPlanets = 1;         // number of planets
 option_defaults.mass = 0.1;             // base planet mass
 option_defaults.exponent = 0.1;         // exponent on gravitational-like force law
-option_defaults.speed = 0.001;          // base speed of random walk
+option_defaults.speed = 0.05;          // base speed of random walk
 option_defaults.radii = 5;              // base radii of planets
 option_defaults.renderPlanets = true;   // render planets as spheres
 

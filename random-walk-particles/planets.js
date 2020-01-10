@@ -19,13 +19,17 @@ class Planets {
         this.meshes = [];
         this.randomWalkers = [];
 
+        this.walkType = 'spherical'; // cartesian | spherical
+        // this.walkType = 'cartesian'; // cartesian | spherical
+        this.radius = 50;            // radius of sphere on which planets live
+
         this.initialize();
 
     }
 
     initialize() {
-        this.initializePlanets();   // pos, vel, acc
         this.createRandomWalkers(); // updates to acc
+        this.initializePlanets();   // pos, vel, acc
         if (this.options.renderPlanets) {
             this.addMeshes()
         }
@@ -38,31 +42,61 @@ class Planets {
         this.acc = [];
         this.masses = [];
         for (let i = 0; i < this.options.numPlanets; i++) {
-            let pos = new THREE.Vector3(
-                100 * (Math.random() - 0.5),
-                100 * (Math.random() - 0.5),
-                100 * (Math.random() - 0.5));
+            let pos;
+            if (this.walkType === 'cartesian') {
+                pos = new THREE.Vector3(
+                    100 * (Math.random() - 0.5),
+                    100 * (Math.random() - 0.5),
+                    100 * (Math.random() - 0.5));
+            } else if (this.walkType === 'spherical') {
+                let r = this.radius; // + this.radius * 0.05 * rand.x;
+                let theta = Math.PI * Math.random();
+                let phi = 2 * Math.PI * Math.random();
+                pos = new THREE.Vector3(r, theta, phi);
+            } else {
+                console.log('Invalid walk type %s', this.walkType)
+            }
             this.pos.push(pos);
             this.vel.push(new THREE.Vector3(0.0, 0.0, 0.0));
             this.acc.push(new THREE.Vector3(0.0, 0.0, 0.0));
-            this.masses.push(this.options.mass)
+            this.masses.push(this.options.mass);
         }
     }
 
     createRandomWalkers() {
         this.randomWalkers = [];
         for (let i = 0; i < this.options.numPlanets; i++) {
-            this.randomWalkers.push(new CartesianRandomWalker(10))
+            if (this.walkType === 'cartesian') {
+                this.randomWalkers.push(new CartesianRandomWalker(100))
+            } else if (this.walkType === 'spherical') {
+                this.randomWalkers.push(new CartesianRandomWalker(100))
+            }
+
         }
     }
 
     update() {
         for (let i = 0; i < this.options.numPlanets; i++) {
-            let acc = this.randomWalkers[i].getNextVal();
-            this.vel[i].addScaledVector(acc, this.options.speed);
-            this.pos[i].add(this.vel[i]);
+            if (this.walkType === 'cartesian') {
+                let acc = this.randomWalkers[i].getNextVal();
+                // this.vel[i].addScaledVector(acc, this.options.speed);
+                // this.pos[i].add(this.vel[i]);
+                this.pos[i].add(acc);
+            } else if (this.walkType === 'spherical') {
+                let rand = this.randomWalkers[i].getNextVal();
+                this.vel[i].x = 0;
+                this.vel[i].y = this.options.speed * rand.y;
+                this.vel[i].z = this.options.speed * rand.z;
+                this.pos[i].add(this.vel[i]);
+            }
             if (this.options.renderPlanets) {
-                this.meshes[i].position.set(this.pos[i].x, this.pos[i].y, this.pos[i].z);
+                if (this.walkType === 'cartesian') {
+                    this.meshes[i].position.set(this.pos[i].x, this.pos[i].y, this.pos[i].z);
+                } else if (this.walkType === 'spherical') {
+                    let p = this.sphericalToCartesian(this.pos[i].x, this.pos[i].y, this.pos[i].z);
+                    this.meshes[i].position.set(p.x, p.y, p.z);
+                }
+
                 this.meshes[i].geometry.verticesNeedUpdate = true
             }
         }
@@ -70,8 +104,8 @@ class Planets {
 
     reset() {
         // create centers of gravity
-        this.initializePlanets(this.options.numPlanets);
         this.createRandomWalkers();
+        this.initializePlanets(this.options.numPlanets);
         if (this.options.renderPlanets) {
             this.removeMeshes();
             this.addMeshes();
@@ -141,6 +175,20 @@ class Planets {
             }
         });
 
+    }
+
+    sphericalToCartesian(r, theta, phi) {
+        if (Math.floor(theta / Math.PI) % 2 === 1) {
+            // theta should be in [0, PI], [2 * PI, 3 * PI], etc; if not flip its sign and rotate
+            // phi
+            theta = -theta;
+            phi += Math.PI;
+        }
+        let x = r * Math.sin(theta) * Math.cos(phi);
+        let y = r * Math.sin(theta) * Math.sin(phi);
+        let z = r * Math.cos(theta);
+
+        return new THREE.Vector3(x, y, z)
     }
 
 }
