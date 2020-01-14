@@ -48,7 +48,7 @@ SCENE.Scene = function(parameters) {
     this.skybox = false;
 
     // axes
-    this.axesHeight = 10;
+    this.axesHeight = 0;
 
     // info displays
     this.displayStats = false;

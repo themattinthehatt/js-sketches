@@ -4,9 +4,11 @@
  * of the particles (satellites), which do *not* interact with each other.
  *
  * TODO:
- * constrain masses to lie on sphere/circle
- * repellant force between masses
- * allow one mass at a time to not feel effects of repellant force ("leader" mass)
+ * planets:
+ *      - repellant force between masses
+ *      - allow one mass at a time to not feel effects of repellant force ("leader" mass)
+ * particles:
+ *      - spring force back to single planet?
  */
 
 
@@ -19,19 +21,19 @@ option_defaults = {};
 // user parameters - planets
 option_defaults.numPlanets = 1;         // number of planets
 option_defaults.mass = 0.1;             // base planet mass
-option_defaults.exponent = 0.1;         // exponent on gravitational-like force law
-option_defaults.speed = 0.05;          // base speed of random walk
+option_defaults.exponent = 0.05;        // exponent on gravitational-like force law
+option_defaults.speed = 0.02;           // base speed of random walk
 option_defaults.radii = 5;              // base radii of planets
-option_defaults.renderPlanets = true;   // render planets as spheres
+option_defaults.renderPlanets = false;   // render planets as spheres
 
 // user parameters - satellites
-option_defaults.numSatellites = 100000; // number of satellites to simulate
-option_defaults.cycleColor = true;      // base color of satellites cycles through huespace
+option_defaults.numSatellites = 5000;   // number of satellites to simulate
+option_defaults.cycleColor = false;     // base color of satellites cycles through huespace
 option_defaults.baseHue = 0.0;          // base hue of satellites
 option_defaults.hueFreq = 0.05;         // frequency of hue cycling
 
 // keep track of time
-let clock;
+let clock = new THREE.Clock(true);
 
 // -------------------
 //     build scene
@@ -48,7 +50,7 @@ let scene = new SCENE.Scene({
 let planets = new Planets(option_defaults, scene);
 
 // initialize massless satellites
-let satellites = new Satellites(option_defaults, scene);
+let satellites = new Satellites(option_defaults, scene, planets);
 
 // set up user parameters in gui
 let gui;
@@ -62,16 +64,13 @@ updateScene();
 
 
 function initializeScene() {
-    // control degree of motion in particles
-    clock = new THREE.Clock(true);
-
     // update planet options to params stored in gui
     planets.options = options;
 
     // update satellite options
-    // satellites.options = options;
+    satellites.options = options;
     // add satellite mesh to scene
-    // scene.add(satellites.mesh);
+    scene.add(satellites.mesh);
 }
 
 function updateScene() {
@@ -80,7 +79,7 @@ function updateScene() {
     planets.update();
 
     // subject satellites to gravitational forces
-    // satellites.update(planets, clock);
+    satellites.update(clock);
 
     // map the 3D scene down to the 2D screen (render the frame) (also updates camera controls)
     scene.renderScene();
@@ -100,12 +99,12 @@ function setupDatGUI() {
     planets.setupGUI(options, gui);
 
     // add particle options to gui
-    satellites.setupGUI(options, gui);
+    satellites.setupGUI(options, gui, clock);
 
     // add reset button
     options.reset = function() {
         planets.reset();
-        // satellites.reset();
+        satellites.reset();
     };
     gui.add(options, 'reset');
 

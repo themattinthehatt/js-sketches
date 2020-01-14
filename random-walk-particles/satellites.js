@@ -1,9 +1,10 @@
 
 class Satellites {
 
-    constructor(options, scene) {
+    constructor(options, scene, planets) {
 
         this.scene = scene;
+        this.planets = planets;
         this.options = options;
         // numSatellites
         // cycleColor
@@ -17,6 +18,7 @@ class Satellites {
         this.color = [];   // satellite colors
         this.maxLen = 5.0; // parameter for dynamic control of satellite colors
         this.phase = 0.0;  // phase offset for color control
+        this.radius = 5.0; // initial radius of satellites
 
         this.initialize();
 
@@ -32,26 +34,28 @@ class Satellites {
         // allocate a plain geometry that will hold all of the vertices which are the satellites
         let satellites = new THREE.Geometry();
         // create the vertices and add them to the satellite's geometry
-        let phi, theta, x, y, z;
-        let RADIUS = 20;
-
+        let r, phi, theta, x, y, z;
         for (let i = 0; i < this.options.numSatellites; i++) {
 
             // random initial position on the surface of a sphere
-            phi = Math.random() * Math.PI;
-            theta = Math.random() * 2.0 * Math.PI;
-            z = RADIUS * Math.cos(phi);
-            x = RADIUS * Math.sin(phi) * Math.cos(theta);
-            y = RADIUS * Math.sin(phi) * Math.sin(theta);
+            phi = Math.random() * 2.0 * Math.PI;
+            theta = Math.random() * Math.PI;
+            r = Math.random();
+            x = r * this.radius * Math.sin(phi) * Math.cos(theta);
+            y = r * this.radius * Math.sin(phi) * Math.sin(theta);
+            z = r * this.radius * Math.cos(phi);
 
             // add vertices to satellite system
             let satellite = new THREE.Vector3(x, y, z);
             satellites.vertices.push(satellite);
-            let col = new THREE.Color(0, 0, 0);
-            this.color.push(col.setHSL(0, 1, 0));
+            let col = new THREE.Color(1, 1, 1);
+            this.color.push(col.setHSL(0, 1, 1));
 
             // keep track of satellite info
-            this.pos.push(new THREE.Vector3(x, y, z));
+            this.pos.push(new THREE.Vector3(
+                this.planets.pos[0].x + x,
+                this.planets.pos[0].y + y,
+                this.planets.pos[0].z + z));
             this.vel.push(new THREE.Vector3(0, 0, 0));
             this.acc.push(new THREE.Vector3(0, 0, 0));
         }
@@ -60,22 +64,24 @@ class Satellites {
         // create satellite system mesh
         let satelliteMaterial = new THREE.PointsMaterial({
             vertexColors: THREE.VertexColors,
-            size: 0.4,
-            sizeAttenuation: false
+            size: 0.5,
+            sizeAttenuation: true
         });
         this.mesh = new THREE.Points(satellites, satelliteMaterial);
     }
 
-    update(planets, clock) {
+    update(clock) {
 
         // for dynamic updates to color
         let temp = 0.0;
         let maxLenNew = 0.0;
-        let hueTrans = 0.16;
-        let baseHue = this.options.baseHue;
+        let hueTrans = 0.16; // distance traveled in hue space before switching to lightness inc
+        let baseHue;
         if (this.options.cycleColor) {
             baseHue = this.options.baseHue + 0.5 +
-                0.5 * Math.cos(this.options.colorFreq * clock.getElapsedTime() + phase);
+                0.5 * Math.cos(this.options.hueFreq * clock.getElapsedTime() + this.phase);
+        } else {
+            baseHue = this.options.baseHue;
         }
 
         // define vertices and colors for easy access
@@ -86,7 +92,8 @@ class Satellites {
         for (let i = 0; i < verts.length; i++) {
 
             // calculate gravitational force
-            let force = new THREE.Vector3(gravCenter.x, gravCenter.y, gravCenter.z).sub(verts[i]);
+            let force = new THREE.Vector3(
+                this.planets.pos[0].x, this.planets.pos[0].y, this.planets.pos[0].z).sub(verts[i]);
             let len = force.length();
             force.normalize().multiplyScalar(
                 this.options.mass / (Math.pow(len, this.options.exponent)));
@@ -104,7 +111,7 @@ class Satellites {
 
             // set color based on velocity
             let speed = this.vel[i].length();
-            let speedScaled = speed / (this.maxLen * 1.5);
+            let speedScaled = speed / (this.maxLen * 1.1);
             if (speedScaled < 0.5) {
                 // move color from red to yellow
                 temp = baseHue + speedScaled * 2.0 * hueTrans;
@@ -128,14 +135,15 @@ class Satellites {
     }
 
     reset() {
-        let phi, theta, x, y, z;
+        let r, phi, theta, x, y, z;
         for (let i = 0; i < this.options.numSatellites; i++) {
             // random initial position on the surface of a sphere
-            phi = Math.random() * Math.PI;
-            theta = Math.random() * 2.0 * Math.PI;
-            z = RADIUS * Math.cos(phi);
-            x = RADIUS * Math.sin(phi) * Math.cos(theta);
-            y = RADIUS * Math.sin(phi) * Math.sin(theta);
+            phi = Math.random() * 2.0 * Math.PI;
+            theta = Math.random() * Math.PI;
+            r = Math.random();
+            x = this.planets.pos[0].x + r * this.radius * Math.sin(phi) * Math.cos(theta);
+            y = this.planets.pos[0].y + r * this.radius * Math.sin(phi) * Math.sin(theta);
+            z = this.planets.pos[0].z + r * this.radius * Math.cos(phi);
 
             // reset satellite position/velocity/acceleration
             this.mesh.geometry.vertices[i].set(x, y, z);
@@ -147,7 +155,7 @@ class Satellites {
         this.mesh.geometry.verticesNeedUpdate = true;
     }
 
-    setupGUI(options, gui) {
+    setupGUI(options, gui, clock) {
 
         let satellites = this;
 
@@ -178,11 +186,11 @@ class Satellites {
         f.add(options, 'cycleColor').onChange(function() {
             if (options.cycleColor) {
                 // if turning on cycling, start with current hue by making cosine term go to 1
-                phase = -1.0 * options.colorFreq * clock.getElapsedTime();
+                satellites.phase = -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
             } else {
                 // if turning off cycling, reset baseHue to current hue
-                options.baseHue = options.baseHue + 0.5 +
-                    0.5 * Math.cos(options.colorFreq * clock.getElapsedTime() + phase)
+                satellites.options.baseHue = satellites.options.baseHue + 0.5 + 0.5 * Math.cos(
+                    satellites.options.hueFreq * clock.getElapsedTime() + satellites.phase)
             }
         });
 
@@ -191,11 +199,11 @@ class Satellites {
         options.colorInit = {h: 360 * satellites.options.baseHue, s: 1.0, v: 1.0}; // actual color
         f.addColor(options, 'colorInit').onChange(function() {
             // use hue of chosen color to update the base hue
-            options.baseHue = options.colorInit.h / 360.0;
+            satellites.options.baseHue = satellites.options.colorInit.h / 360.0;
             // update phase for smooth transition while color cycling; makes cosine
             // term go to 1 so that actual picked hue is used
             if (options.cycleColor) {
-                phase = -1.0 * options.hueFreq * clock.getElapsedTime();
+                satellites.phase = -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
             }
         });
 
