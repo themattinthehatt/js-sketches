@@ -13,7 +13,7 @@ class Planets {
         // renderPlanets: render planets as spheres
 
         this.pos = [];           // location of each planet (cartesian coords)
-        this.pos_sph = [];       // position of each planet (spherical coords)
+        this.posSph = [];        // position of each planet (spherical coords)
         this.vel = [];           // velocity of each planet
         this.acc = [];           // acceleration of each planet
         this.masses = [];        // mass of each planet
@@ -39,7 +39,7 @@ class Planets {
     initializePlanets(numPlanets) {
         this.numPlanets = numPlanets || this.options.numPlanets;
         this.pos = [];
-        this.pos_sph = [];
+        this.posSph = [];
         this.vel = [];
         this.acc = [];
         this.masses = [];
@@ -58,9 +58,9 @@ class Planets {
             } else {
                 console.log('Invalid walk type %s', this.walkType)
             }
-            this.pos_sph.push(pos);
+            this.posSph.push(pos);
             this.pos.push(this.sphericalToCartesian(
-                this.pos_sph[i].x, this.pos_sph[i].y, this.pos_sph[i].z));
+                this.posSph[i].x, this.posSph[i].y, this.posSph[i].z));
             this.vel.push(new THREE.Vector3(0.0, 0.0, 0.0));
             this.acc.push(new THREE.Vector3(0.0, 0.0, 0.0));
             this.masses.push(this.options.mass);
@@ -73,7 +73,7 @@ class Planets {
             if (this.walkType === 'cartesian') {
                 this.randomWalkers.push(new CartesianRandomWalker(100))
             } else if (this.walkType === 'spherical') {
-                this.randomWalkers.push(new CartesianRandomWalker(100))
+                this.randomWalkers.push(new CartesianRandomWalker(200))
             }
 
         }
@@ -91,9 +91,9 @@ class Planets {
                 this.vel[i].x = 0;
                 this.vel[i].y = this.options.speed * rand.y;
                 this.vel[i].z = this.options.speed * rand.z;
-                this.pos_sph[i].add(this.vel[i]);
+                this.posSph[i].add(this.vel[i]);
                 this.pos[i] = this.sphericalToCartesian(
-                    this.pos_sph[i].x, this.pos_sph[i].y, this.pos_sph[i].z);
+                    this.posSph[i].x, this.posSph[i].y, this.posSph[i].z);
             }
             if (this.options.renderPlanets) {
                 this.meshes[i].position.set(this.pos[i].x, this.pos[i].y, this.pos[i].z);
@@ -146,7 +146,7 @@ class Planets {
 
         // base mass slider
         options.mass = planets.options.mass;
-        f.add(options, 'mass', 0.0, 10);
+        f.add(options, 'mass', 0.0, 1);
 
         // gravitational force exponent slider
         options.exponent = planets.options.exponent;

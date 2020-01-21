@@ -5,10 +5,16 @@
  *
  * TODO:
  * planets:
+ *      - multiple planets
  *      - repellant force between masses
  *      - allow one mass at a time to not feel effects of repellant force ("leader" mass)
  * particles:
- *      - spring force back to single planet?
+ *
+ * good param settings:
+ *      - spherical shell: 1, 0.1, 0.05, 0.02, 5 -- 0.05, 0.025
+ *      - restrained volcano: 0.45, 0.05, 0.01, 10 -- 0.05, 0.025
+ *      - oscillating shell: 0.005 (0.02), 0.05, 0.01, 10 -- 0.05, 0
+ *      - pulse+particle: 0.01, 0.05, 0.01, 10 -- 0.003, 0.001-0.003 (controls spread)
  */
 
 
@@ -31,6 +37,8 @@ option_defaults.numSatellites = 5000;   // number of satellites to simulate
 option_defaults.cycleColor = false;     // base color of satellites cycles through huespace
 option_defaults.baseHue = 0.0;          // base hue of satellites
 option_defaults.hueFreq = 0.05;         // frequency of hue cycling
+option_defaults.kPos = 0.05;            // strength of spring force (displacement)
+option_defaults.kVel = 0.025;            // strength of spring force (velocity)
 
 // keep track of time
 let clock = new THREE.Clock(true);

@@ -10,15 +10,17 @@ class Satellites {
         // cycleColor
         // baseHue
         // hueFreq
+        // kPos
+        // kVel
 
         this.mesh = null;  // satellite mesh
+        this.pos0 = [];    // initial satellite positions
         this.pos = [];     // satellite positions
         this.vel = [];     // satellite velocities
         this.acc = [];     // satellite accelerations
         this.color = [];   // satellite colors
         this.maxLen = 5.0; // parameter for dynamic control of satellite colors
         this.phase = 0.0;  // phase offset for color control
-        this.radius = 5.0; // initial radius of satellites
 
         this.initialize();
 
@@ -40,10 +42,10 @@ class Satellites {
             // random initial position on the surface of a sphere
             phi = Math.random() * 2.0 * Math.PI;
             theta = Math.random() * Math.PI;
-            r = Math.random();
-            x = r * this.radius * Math.sin(phi) * Math.cos(theta);
-            y = r * this.radius * Math.sin(phi) * Math.sin(theta);
-            z = r * this.radius * Math.cos(phi);
+            r = 1.0; //Math.random();
+            x = r * this.options.radii * Math.sin(phi) * Math.cos(theta);
+            y = r * this.options.radii * Math.sin(phi) * Math.sin(theta);
+            z = r * this.options.radii * Math.cos(phi);
 
             // add vertices to satellite system
             let satellite = new THREE.Vector3(x, y, z);
@@ -52,10 +54,11 @@ class Satellites {
             this.color.push(col.setHSL(0, 1, 1));
 
             // keep track of satellite info
+            this.pos0.push(new THREE.Vector3(x, y, z));
             this.pos.push(new THREE.Vector3(
-                this.planets.pos[0].x + x,
-                this.planets.pos[0].y + y,
-                this.planets.pos[0].z + z));
+                this.pos0[i].x + this.planets.pos[0].x,
+                this.pos0[i].y + this.planets.pos[0].y,
+                this.pos0[i].z + this.planets.pos[0].z));
             this.vel.push(new THREE.Vector3(0, 0, 0));
             this.acc.push(new THREE.Vector3(0, 0, 0));
         }
@@ -98,8 +101,17 @@ class Satellites {
             force.normalize().multiplyScalar(
                 this.options.mass / (Math.pow(len, this.options.exponent)));
 
+            // calculate damped spring force
+            // acc += -k_0 * velocity - k_1 * displacement
+            // let forceSpring = this.pos[i].clone().sub(this.planets.pos[0].add(this.pos0[i]));
+            // let forceSpring = this.pos[i].clone().sub(this.planets.pos[0].clone().add(this.pos0[i]));
+            let forceSpring = this.planets.pos[0].clone().add(this.pos0[i]).sub(this.pos[i].clone());
+            forceSpring.multiplyScalar(this.options.kPos);
+            forceSpring.addScaledVector(this.vel[i], -1.0 * this.options.kVel);
+
             // update dynamics
             this.acc[i].add(force);
+            this.acc[i].add(forceSpring);
             this.vel[i].add(this.acc[i]);
             this.pos[i].add(this.vel[i]);
 
@@ -140,14 +152,18 @@ class Satellites {
             // random initial position on the surface of a sphere
             phi = Math.random() * 2.0 * Math.PI;
             theta = Math.random() * Math.PI;
-            r = Math.random();
-            x = this.planets.pos[0].x + r * this.radius * Math.sin(phi) * Math.cos(theta);
-            y = this.planets.pos[0].y + r * this.radius * Math.sin(phi) * Math.sin(theta);
-            z = this.planets.pos[0].z + r * this.radius * Math.cos(phi);
+            r = 1.0; // Math.random();
+            x = r * this.options.radii * Math.sin(phi) * Math.cos(theta);
+            y = r * this.options.radii * Math.sin(phi) * Math.sin(theta);
+            z = r * this.options.radii * Math.cos(phi);
 
             // reset satellite position/velocity/acceleration
-            this.mesh.geometry.vertices[i].set(x, y, z);
-            this.pos[i].set(x, y, z);
+            this.pos0[i].set(x, y, z);
+            this.pos[i].set(
+                this.pos0[i].x + this.planets.pos[0].x,
+                this.pos0[i].y + this.planets.pos[0].y,
+                this.pos0[i].z + this.planets.pos[0].z);
+            this.mesh.geometry.vertices[i].set(this.pos0[i].x, this.pos0[i].y, this.pos0[i].z);
             this.vel[i].multiplyScalar(0.0);
             this.acc[i].multiplyScalar(0.0);
         }
@@ -210,6 +226,14 @@ class Satellites {
         // frequency of hue cycling
         options.hueFreq = satellites.options.hueFreq;
         f.add(options, 'hueFreq', 0.0, 0.5);
+
+        // strength of spring force (displacement)
+        options.kPos = satellites.options.kPos;
+        f.add(options, 'kPos', 0.0, 0.1);
+
+        // strength of spring force (velocity)
+        options.kVel = satellites.options.kVel;
+        f.add(options, 'kVel', 0.0, 0.1);
 
     }
 
