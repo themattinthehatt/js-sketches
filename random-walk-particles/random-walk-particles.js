@@ -14,7 +14,8 @@
  *      - spherical shell: 1, 0.1, 0.05, 0.02, 5 -- 0.05, 0.025
  *      - restrained volcano: 0.45, 0.05, 0.01, 10 -- 0.05, 0.025
  *      - oscillating shell: 0.005 (0.02), 0.05, 0.01, 10 -- 0.05, 0
- *      - pulse+particle: 0.01, 0.05, 0.01, 10 -- 0.003, 0.001-0.003 (controls spread)
+ *      - pulse+particle-0: 0.01, 0.05, 0.01, 10 -- 0.003, 0.001-0.003 (controls spread)
+ *      - pulse+particle-1: 0.027, 0.05, 0.01, 10 -- 0.0027, 0.0027
  */
 
 
@@ -26,10 +27,10 @@ option_defaults = {};
 
 // user parameters - planets
 option_defaults.numPlanets = 1;         // number of planets
-option_defaults.mass = 0.1;             // base planet mass
+option_defaults.mass = 0.01;             // base planet mass
 option_defaults.exponent = 0.05;        // exponent on gravitational-like force law
-option_defaults.speed = 0.02;           // base speed of random walk
-option_defaults.radii = 5;              // base radii of planets
+option_defaults.speed = 0.01;           // base speed of random walk
+option_defaults.radii = 10;              // base radii of planets
 option_defaults.renderPlanets = false;   // render planets as spheres
 
 // user parameters - satellites
@@ -37,8 +38,8 @@ option_defaults.numSatellites = 5000;   // number of satellites to simulate
 option_defaults.cycleColor = false;     // base color of satellites cycles through huespace
 option_defaults.baseHue = 0.0;          // base hue of satellites
 option_defaults.hueFreq = 0.05;         // frequency of hue cycling
-option_defaults.kPos = 0.05;            // strength of spring force (displacement)
-option_defaults.kVel = 0.025;            // strength of spring force (velocity)
+option_defaults.kPos = 0.003;            // strength of spring force (displacement)
+option_defaults.kVel = 0.001;            // strength of spring force (velocity)
 
 // keep track of time
 let clock = new THREE.Clock(true);
@@ -58,7 +59,7 @@ let scene = new SCENE.Scene({
 let planets = new Planets(option_defaults, scene);
 
 // initialize massless satellites
-let satellites = new Satellites(option_defaults, scene, planets);
+let satellites = new SatelliteArray(option_defaults, scene, planets);
 
 // set up user parameters in gui
 let gui;
@@ -76,9 +77,10 @@ function initializeScene() {
     planets.options = options;
 
     // update satellite options
-    satellites.options = options;
+    satellites.updateOptions(options);
     // add satellite mesh to scene
-    scene.add(satellites.mesh);
+    satellites.addMesh(scene);
+
 }
 
 function updateScene() {

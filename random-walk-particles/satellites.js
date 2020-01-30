@@ -1,7 +1,7 @@
 
 class Satellites {
 
-    constructor(options, scene, planets) {
+    constructor(options, scene, planets, planet_id = 0) {
 
         this.scene = scene;
         this.planets = planets;
@@ -12,6 +12,7 @@ class Satellites {
         // hueFreq
         // kPos
         // kVel
+        this.planet_id = planet_id;
 
         this.mesh = null;  // satellite mesh
         this.pos0 = [];    // initial satellite positions
@@ -48,17 +49,16 @@ class Satellites {
             z = r * this.options.radii * Math.cos(phi);
 
             // add vertices to satellite system
-            let satellite = new THREE.Vector3(x, y, z);
-            satellites.vertices.push(satellite);
+            satellites.vertices.push(new THREE.Vector3(x, y, z));
             let col = new THREE.Color(1, 1, 1);
             this.color.push(col.setHSL(0, 1, 1));
 
             // keep track of satellite info
             this.pos0.push(new THREE.Vector3(x, y, z));
             this.pos.push(new THREE.Vector3(
-                this.pos0[i].x + this.planets.pos[0].x,
-                this.pos0[i].y + this.planets.pos[0].y,
-                this.pos0[i].z + this.planets.pos[0].z));
+                this.pos0[i].x + this.planets.pos[this.planet_id].x,
+                this.pos0[i].y + this.planets.pos[this.planet_id].y,
+                this.pos0[i].z + this.planets.pos[this.planet_id].z));
             this.vel.push(new THREE.Vector3(0, 0, 0));
             this.acc.push(new THREE.Vector3(0, 0, 0));
         }
@@ -95,23 +95,25 @@ class Satellites {
         for (let i = 0; i < verts.length; i++) {
 
             // calculate gravitational force
-            let force = new THREE.Vector3(
-                this.planets.pos[0].x, this.planets.pos[0].y, this.planets.pos[0].z).sub(verts[i]);
-            let len = force.length();
-            force.normalize().multiplyScalar(
-                this.options.mass / (Math.pow(len, this.options.exponent)));
+            let force;
+            for (let j = 0; j < this.options.numPlanets; j++) {
+                force = this.planets.pos[j].clone().sub(verts[i]);
+                force.normalize().multiplyScalar(
+                    this.options.mass / (Math.pow(force.length(), this.options.exponent)));
+                this.acc[i].add(force);
+            }
 
             // calculate damped spring force
             // acc += -k_0 * velocity - k_1 * displacement
             // let forceSpring = this.pos[i].clone().sub(this.planets.pos[0].add(this.pos0[i]));
             // let forceSpring = this.pos[i].clone().sub(this.planets.pos[0].clone().add(this.pos0[i]));
-            let forceSpring = this.planets.pos[0].clone().add(this.pos0[i]).sub(this.pos[i].clone());
+            let forceSpring = this.planets.pos[this.planet_id].clone().add(
+                this.pos0[i]).sub(this.pos[i].clone());
             forceSpring.multiplyScalar(this.options.kPos);
             forceSpring.addScaledVector(this.vel[i], -1.0 * this.options.kVel);
+            this.acc[i].add(forceSpring);
 
             // update dynamics
-            this.acc[i].add(force);
-            this.acc[i].add(forceSpring);
             this.vel[i].add(this.acc[i]);
             this.pos[i].add(this.vel[i]);
 
@@ -137,6 +139,7 @@ class Satellites {
                 maxLenNew = speed
             }
         }
+
         // update velocity ceiling
         this.maxLen = 0.99 * this.maxLen + 0.01 * maxLenNew;
 
@@ -160,15 +163,55 @@ class Satellites {
             // reset satellite position/velocity/acceleration
             this.pos0[i].set(x, y, z);
             this.pos[i].set(
-                this.pos0[i].x + this.planets.pos[0].x,
-                this.pos0[i].y + this.planets.pos[0].y,
-                this.pos0[i].z + this.planets.pos[0].z);
+                this.pos0[i].x + this.planets.pos[this.planet_id].x,
+                this.pos0[i].y + this.planets.pos[this.planet_id].y,
+                this.pos0[i].z + this.planets.pos[this.planet_id].z);
             this.mesh.geometry.vertices[i].set(this.pos0[i].x, this.pos0[i].y, this.pos0[i].z);
             this.vel[i].multiplyScalar(0.0);
             this.acc[i].multiplyScalar(0.0);
         }
         // update satellite system info on gpu
         this.mesh.geometry.verticesNeedUpdate = true;
+    }
+
+}
+
+class SatelliteArray {
+
+    constructor(options, scene, planets) {
+        this.scene = scene;
+        this.planets = planets;
+        this.options = options;
+        this.satelliteArray = [];
+        for (let i = 0; i < options.numPlanets; i++) {
+            this.satelliteArray.push(new Satellites(options, scene, planets, i))
+        }
+    }
+
+    update(clock) {
+        for (let i = 0; i < this.options.numPlanets; i++) {
+            this.satelliteArray[i].update(clock)
+        }
+    }
+
+    updateOptions(options) {
+        this.options = options;
+        for (let i = 0; i < this.options.numPlanets; i++) {
+            this.satelliteArray[i].options = options;
+        }
+    }
+
+    addMesh() {
+        for (let i = 0; i < this.options.numPlanets; i++) {
+            this.scene.add(this.satelliteArray[i].mesh);
+            console.log("adding mesh")
+        }
+    }
+
+    reset() {
+        for (let i = 0; i < this.options.numPlanets; i++) {
+            this.satelliteArray[i].reset()
+        }
     }
 
     setupGUI(options, gui, clock) {
@@ -188,13 +231,23 @@ class Satellites {
                 options.numSatellites = 1;
             }
             // remove old satellite system
-            satellites.scene.remove(satellites.mesh);
+            // satellites.scene.remove(satellites.mesh);
+            for (let i = 0; i < satellites.options.numPlanets; i++) {
+                satellites.scene.remove(satellites.satelliteArray[i].mesh);
+            }
 
             // create new satellite system
-            satellites.initialize();
+            // satellites.initialize();
+            for (let i = 0; i < satellites.options.numPlanets; i++) {
+                satellites.satelliteArray[i].initialize();
+            }
 
             // add new satellite system to scene
-            satellites.scene.add(satellites.mesh);
+            // satellites.scene.add(satellites.mesh);
+            for (let i = 0; i < satellites.options.numPlanets; i++) {
+                satellites.scene.add(satellites.satelliteArray[i].mesh);
+            }
+
         });
 
         // cycle through base colors of satellites radio button
@@ -202,11 +255,16 @@ class Satellites {
         f.add(options, 'cycleColor').onChange(function() {
             if (options.cycleColor) {
                 // if turning on cycling, start with current hue by making cosine term go to 1
-                satellites.phase = -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
+                for (let i = 0; i < satellites.options.numPlanets; i++) {
+                    satellites.satelliteArray[i].phase =
+                        -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
+                }
+                // satellites.phase = -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
             } else {
                 // if turning off cycling, reset baseHue to current hue
                 satellites.options.baseHue = satellites.options.baseHue + 0.5 + 0.5 * Math.cos(
-                    satellites.options.hueFreq * clock.getElapsedTime() + satellites.phase)
+                    satellites.options.hueFreq * clock.getElapsedTime() +
+                    satellites.satelliteArray[0].phase)
             }
         });
 
@@ -219,7 +277,11 @@ class Satellites {
             // update phase for smooth transition while color cycling; makes cosine
             // term go to 1 so that actual picked hue is used
             if (options.cycleColor) {
-                satellites.phase = -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
+                for (let i = 0; i < satellites.options.numPlanets; i++) {
+                    satellites.satelliteArray[i].phase =
+                        -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
+                }
+                // satellites.phase = -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
             }
         });
 

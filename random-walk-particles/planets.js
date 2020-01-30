@@ -80,6 +80,10 @@ class Planets {
     }
 
     update() {
+        /**
+         * Each planet updates it's velocity in spherical coordinates (no change in radius)
+         * according to a smooth random walk. Planets do not currently interact with each other.
+         */
         for (let i = 0; i < this.options.numPlanets; i++) {
             if (this.walkType === 'cartesian') {
                 let acc = this.randomWalkers[i].getNextVal();
@@ -118,14 +122,15 @@ class Planets {
             let geometry = new THREE.SphereGeometry(
                 this.options.radii, 64, 32);
             let material = new THREE.MeshPhongMaterial(
-                {color: 0x333333, side: THREE.DoubleSide});
+                {color: 0x333333, side: THREE.DoubleSide, opacity: 0.5,
+                    transparent: true});
             this.meshes.push(new THREE.Mesh(geometry, material));
             this.meshes[i].position.set(this.pos[i].x, this.pos[i].y, this.pos[i].z);
             this.scene.add(this.meshes[i]);
         }
     }
 
-    removeMeshes(scene) {
+    removeMeshes() {
         for (let i = 0; i < this.meshes.length; i++) {
             this.scene.remove(this.meshes[i])
         }
