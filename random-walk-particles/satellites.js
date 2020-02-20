@@ -182,34 +182,47 @@ class SatelliteArray {
         this.scene = scene;
         this.planets = planets;
         this.options = options;
-        this.satelliteArray = [];
-        for (let i = 0; i < options.numPlanets; i++) {
-            this.satelliteArray.push(new Satellites(options, scene, planets, i))
+        this.reinitialize(planets)
+    }
+
+    reinitialize(planets) {
+        if (typeof this.satelliteArray !== "undefined") {
+            this.removeMesh()
         }
+        this.satelliteArray = [];
+        for (let i = 0; i < this.options.numPlanets; i++) {
+            this.satelliteArray.push(new Satellites(this.options, this.scene, planets, i))
+        }
+        this.addMesh()
     }
 
     update(clock) {
-        for (let i = 0; i < this.options.numPlanets; i++) {
+        for (let i = 0; i < this.satelliteArray.length; i++) {
             this.satelliteArray[i].update(clock)
         }
     }
 
     updateOptions(options) {
         this.options = options;
-        for (let i = 0; i < this.options.numPlanets; i++) {
+        for (let i = 0; i < this.satelliteArray.length; i++) {
             this.satelliteArray[i].options = options;
         }
     }
 
     addMesh() {
-        for (let i = 0; i < this.options.numPlanets; i++) {
+        for (let i = 0; i < this.satelliteArray.length; i++) {
             this.scene.add(this.satelliteArray[i].mesh);
-            console.log("adding mesh")
+        }
+    }
+
+    removeMesh() {
+        for (let i = 0; i < this.satelliteArray.length; i++) {
+            this.scene.remove(this.satelliteArray[i].mesh);
         }
     }
 
     reset() {
-        for (let i = 0; i < this.options.numPlanets; i++) {
+        for (let i = 0; i < this.satelliteArray.length; i++) {
             this.satelliteArray[i].reset()
         }
     }
@@ -225,28 +238,26 @@ class SatelliteArray {
         f.add(options, 'numSatellites').onChange(function() {
             // make sure input is a reasonable integer
             options.numSatellites = Math.round(options.numSatellites);
-            if (options.numSatellites > 200000) {
-                options.numSatellites = 200000;
+            if (options.numSatellites > 100000) {
+                options.numSatellites = 100000;
             } else if (options.numSatellites < 1) {
                 options.numSatellites = 1;
             }
+            satellites.reinitialize(planets)
             // remove old satellite system
-            // satellites.scene.remove(satellites.mesh);
-            for (let i = 0; i < satellites.options.numPlanets; i++) {
-                satellites.scene.remove(satellites.satelliteArray[i].mesh);
-            }
-
+            // satellites.removeMesh();
+            // for (let i = 0; i < satellites.satelliteArray.length; i++) {
+            //     satellites.scene.remove(satellites.satelliteArray[i].mesh);
+            // }
             // create new satellite system
-            // satellites.initialize();
-            for (let i = 0; i < satellites.options.numPlanets; i++) {
-                satellites.satelliteArray[i].initialize();
-            }
-
+            // satellites.satelliteArray = [];
+            // for (let i = 0; i < options.numPlanets; i++) {
+            //     satellites.satelliteArray.push(new Satellites(options, scene, planets, i))
+            // }
             // add new satellite system to scene
-            // satellites.scene.add(satellites.mesh);
-            for (let i = 0; i < satellites.options.numPlanets; i++) {
-                satellites.scene.add(satellites.satelliteArray[i].mesh);
-            }
+            // for (let i = 0; i < options.numPlanets; i++) {
+            //     satellites.scene.add(satellites.satelliteArray[i].mesh);
+            // }
 
         });
 
@@ -255,15 +266,15 @@ class SatelliteArray {
         f.add(options, 'cycleColor').onChange(function() {
             if (options.cycleColor) {
                 // if turning on cycling, start with current hue by making cosine term go to 1
-                for (let i = 0; i < satellites.options.numPlanets; i++) {
+                for (let i = 0; i < options.numPlanets; i++) {
                     satellites.satelliteArray[i].phase =
-                        -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
+                        -1.0 * options.hueFreq * clock.getElapsedTime();
                 }
                 // satellites.phase = -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
             } else {
                 // if turning off cycling, reset baseHue to current hue
-                satellites.options.baseHue = satellites.options.baseHue + 0.5 + 0.5 * Math.cos(
-                    satellites.options.hueFreq * clock.getElapsedTime() +
+                options.baseHue = options.baseHue + 0.5 + 0.5 * Math.cos(
+                    options.hueFreq * clock.getElapsedTime() +
                     satellites.satelliteArray[0].phase)
             }
         });
@@ -273,13 +284,13 @@ class SatelliteArray {
         options.colorInit = {h: 360 * satellites.options.baseHue, s: 1.0, v: 1.0}; // actual color
         f.addColor(options, 'colorInit').onChange(function() {
             // use hue of chosen color to update the base hue
-            satellites.options.baseHue = satellites.options.colorInit.h / 360.0;
+            options.baseHue = options.colorInit.h / 360.0;
             // update phase for smooth transition while color cycling; makes cosine
             // term go to 1 so that actual picked hue is used
             if (options.cycleColor) {
-                for (let i = 0; i < satellites.options.numPlanets; i++) {
+                for (let i = 0; i < options.numPlanets; i++) {
                     satellites.satelliteArray[i].phase =
-                        -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
+                        -1.0 * options.hueFreq * clock.getElapsedTime();
                 }
                 // satellites.phase = -1.0 * satellites.options.hueFreq * clock.getElapsedTime();
             }

@@ -136,17 +136,18 @@ class Planets {
         }
     }
 
-    setupGUI(options, gui) {
+    setupGUI(options, gui, satellites) {
 
         let planets = this;
 
         let f = gui.addFolder('Planet parameters');
 
         // number of masses dropdown
-        let mList = [1, 2, 4, 6, 8, 10];
+        let mList = [1, 2, 3, 4, 5, 6, 8, 10];
         options.numPlanets = planets.options.numPlanets;
         f.add(options, 'numPlanets', mList).onChange(function() {
             planets.reset();
+            satellites.reinitialize(planets)
         });
 
         // base mass slider

@@ -8,7 +8,8 @@
  *      - multiple planets
  *      - repellant force between masses
  *      - allow one mass at a time to not feel effects of repellant force ("leader" mass)
- * particles:
+ * other:
+ *      - reset camera with "reset" radio button
  *
  * good param settings:
  *      - spherical shell: 1, 0.1, 0.05, 0.02, 5 -- 0.05, 0.025
@@ -26,7 +27,7 @@
 option_defaults = {};
 
 // user parameters - planets
-option_defaults.numPlanets = 1;         // number of planets
+option_defaults.numPlanets = 2;         // number of planets
 option_defaults.mass = 0.01;             // base planet mass
 option_defaults.exponent = 0.05;        // exponent on gravitational-like force law
 option_defaults.speed = 0.01;           // base speed of random walk
@@ -34,7 +35,7 @@ option_defaults.radii = 10;              // base radii of planets
 option_defaults.renderPlanets = false;   // render planets as spheres
 
 // user parameters - satellites
-option_defaults.numSatellites = 5000;   // number of satellites to simulate
+option_defaults.numSatellites = 50000;   // number of satellites to simulate
 option_defaults.cycleColor = false;     // base color of satellites cycles through huespace
 option_defaults.baseHue = 0.0;          // base hue of satellites
 option_defaults.hueFreq = 0.05;         // frequency of hue cycling
@@ -49,8 +50,9 @@ let clock = new THREE.Clock(true);
 // -------------------
 
 // allocate the scene object, and set the camera position
+cameraPosInit = [200, 0, 0];
 let scene = new SCENE.Scene({
-    cameraPos: [150, 0, 0],
+    cameraPos: cameraPosInit,
     controls: true,
     displayStats: true
 });
@@ -106,7 +108,7 @@ function setupDatGUI() {
     gui = new dat.GUI();
 
     // add planet options to gui
-    planets.setupGUI(options, gui);
+    planets.setupGUI(options, gui, satellites);
 
     // add particle options to gui
     satellites.setupGUI(options, gui, clock);
@@ -115,6 +117,7 @@ function setupDatGUI() {
     options.reset = function() {
         planets.reset();
         satellites.reset();
+        scene.cameraPos = cameraPosInit
     };
     gui.add(options, 'reset');
 
